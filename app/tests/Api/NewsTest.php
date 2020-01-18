@@ -44,6 +44,20 @@ class ApiNewsTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * getNewsItem
+     *
+     * @since 18.01.2020 20:00
+     * @author byrkin
+     * @param int $id
+     * @return array
+     */
+    protected function getNewsItem($id)
+    {
+        $response = $this->client->request('GET', 'news/'.$id);
+        return json_decode($response->getBody()->getContents(), true);
+    }
+
+    /**
      * testCRUD
      *
      * @since 18.01.2020 11:17
@@ -64,8 +78,11 @@ class ApiNewsTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals(422, $response->getStatusCode());
 
         // Создание новости
+        $title = 'some title';
+        $content = 'some content';
+
         $response = $this->client->request('POST', 'news', [
-            'body' => json_encode(['author_id' => $author, 'content' => 'some text', 'title' => 'come content'])
+            'body' => json_encode(['author_id' => $author, 'content' => $content, 'title' => $title])
         ]);
 
         $this->assertEquals(201, $response->getStatusCode());
@@ -74,11 +91,20 @@ class ApiNewsTest extends \PHPUnit\Framework\TestCase
         $this->assertTrue(is_array($data));
         $this->assertTrue(array_key_exists('id', $data));
 
+        $newsItem = $this->getNewsItem($data['id']);
+
+        $this->assertEquals($newsItem['title'], $title);
+        $this->assertEquals($newsItem['content'], $content);
+        $this->assertEquals($newsItem['author']['id'], $author);
+
         // Обновление созданной новости
         $id = $data['id'];
 
+        $title = 'updated title';
+        $content = 'updated content';
+
         $response = $this->client->request('PUT', 'news/'.$id, [
-            'body' => json_encode(['content' => 'some updated content', 'title' => 'some updated title', 'author_id' => $author])
+            'body' => json_encode(['content' => $content, 'title' => $title, 'author_id' => $author])
         ]);
 
         $this->assertEquals(200, $response->getStatusCode());
@@ -86,6 +112,12 @@ class ApiNewsTest extends \PHPUnit\Framework\TestCase
 
         $this->assertTrue(is_array($data));
         $this->assertTrue(array_key_exists('id', $data));
+
+        $newsItem = $this->getNewsItem($data['id']);
+
+        $this->assertEquals($newsItem['title'], $title);
+        $this->assertEquals($newsItem['content'], $content);
+        $this->assertEquals($newsItem['author']['id'], $author);
 
         // Просмотр новости
         $response = $this->client->request('GET', 'news/'.$id);
