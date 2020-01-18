@@ -18,7 +18,7 @@ class ApiNewsTest extends \PHPUnit\Framework\TestCase
     public function setUp(): void
     {
         $this->client = new GuzzleHttp\Client([
-            'base_uri' => 'http://news.app.local/api/',
+            'base_uri' => 'http://127.0.0.1/api/',
             'timeout'  => 2.0,
             'http_errors' => false
         ]);
@@ -64,11 +64,8 @@ class ApiNewsTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals(422, $response->getStatusCode());
 
         // Создание новости
-        $content = 'content';
-        $title = 'title';
-
         $response = $this->client->request('POST', 'news', [
-            'body' => json_encode(['author_id' => $author, 'content' => $content, 'title' => $title])
+            'body' => json_encode(['author_id' => $author, 'content' => 'some text', 'title' => 'come content'])
         ]);
 
         $this->assertEquals(201, $response->getStatusCode());
@@ -80,11 +77,8 @@ class ApiNewsTest extends \PHPUnit\Framework\TestCase
         // Обновление созданной новости
         $id = $data['id'];
 
-        $content = 'updated content';
-        $title = 'updated title';
-
         $response = $this->client->request('PUT', 'news/'.$id, [
-            'body' => json_encode(['content' => $content, 'title' => $title, 'author_id' => $author])
+            'body' => json_encode(['content' => 'some updated content', 'title' => 'some updated title', 'author_id' => $author])
         ]);
 
         $this->assertEquals(200, $response->getStatusCode());
