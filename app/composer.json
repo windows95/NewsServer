@@ -1,0 +1,14 @@
+{
+    "name": "byrkin/app",
+    "authors": [
+        {
+            "name": "byrkin",
+            "email": "3595929@gmail.com"
+        }
+    ],
+    "require": {},
+    "require-dev": {
+        "phpunit/phpunit": "^8",
+        "guzzlehttp/guzzle": "^6.5"
+    }
+}
