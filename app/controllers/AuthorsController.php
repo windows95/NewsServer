@@ -11,47 +11,10 @@ use Api\Exceptions\WrongDataException as WrongDataException;
 class AuthorsController extends BaseController
 {
     /**
-     * saveOrCreateAuthor
-     *
-     * @since 17.01.2020 10:52
-     * @author byrkin
-     * @param object $data
-     * @param int $id
-     * @return Authors $author
+     * Соответствие названиий параметров и полей модели
+     * @var array
      */
-    protected function saveOrCreateAuthor($data, $id = null)
-    {
-        $author = $id ? Authors::findFirst($id) : new Authors();
-
-        if ($id && !$author) {
-            throw new WrongDataException('Author not found');
-        }
-
-        $missingFields = [];
-        foreach (['first_name', 'last_name'] as $field)
-        {
-            if (!property_exists($data, $field)) {
-                $missingFields[] = $field;
-            }
-        }
-
-        if (count($missingFields)) {
-            throw new WrongDataException('Fields missing: ' . implode(', ', $missingFields));
-        }
-
-        $author->first_name = $data->first_name;
-        $author->last_name = $data->last_name;
-
-        if ($author->save() === false)
-        {
-            $errors = array_map(function($message) {
-                return $message->getMessage();
-            }, $author->getMessages());
-
-            throw new WrongDataException(implode('; ', $errors));
-        }
-        return $author;
-    }
+    protected $map = ['last_name' => 'last_name', 'first_name' => 'first_name'];
 
     /**
      * Создание автора
@@ -63,14 +26,38 @@ class AuthorsController extends BaseController
     {
         try
         {
-            $data = $this->request->getJsonRawBody();
-
-            $author = $this->saveOrCreateAuthor($data);
-
-            $data->id = $author->id;
+            $author = new Authors();
+            $this->saveOrCreateRecord($author, $this->map, $this->request->getJsonRawBody());
 
             $this->response->setStatusCode(201, 'Created');
-            $this->response->setJsonContent($data);
+            $this->response->setJsonContent(['id' => $author->id]);
+        }
+        catch (WrongDataException $e)
+        {
+            $this->response->setStatusCode(422, 'Unprocessable Entity');
+            $this->response->setJsonContent(['error' => $e->getMessage()]);
+        }
+        catch (\Exception $e)
+        {
+            $this->response->setStatusCode(500, 'Internal Server Error');
+            $this->response->setJsonContent(['error' => $e->getMessage()]);
+        }
+    }
+
+    /**
+     * updateAction
+     *
+     * @since 17.01.2020 09:12
+     * @author byrkin
+     */
+    public function updateAction($id)
+    {
+        try
+        {
+            $author = Authors::findFirst(intval($id));
+            $this->saveOrCreateRecord($author, $this->map, $this->request->getJsonRawBody());
+
+            $this->response->setJsonContent(['id' => $id]);
         }
         catch (WrongDataException $e)
         {
@@ -102,34 +89,6 @@ class AuthorsController extends BaseController
             ];
         }
         $this->response->setJsonContent($data);
-    }
-
-    /**
-     * updateAction
-     *
-     * @since 17.01.2020 09:12
-     * @author byrkin
-     */
-    public function updateAction($id)
-    {
-        try
-        {
-            $data = $this->request->getJsonRawBody();
-
-            $this->saveOrCreateAuthor($data, intval($id));
-
-            $this->response->setJsonContent($data);
-        }
-        catch (WrongDataException $e)
-        {
-            $this->response->setStatusCode(422, 'Unprocessable Entity');
-            $this->response->setJsonContent(['error' => $e->getMessage()]);
-        }
-        catch (\Exception $e)
-        {
-            $this->response->setStatusCode(500, 'Internal Server Error');
-            $this->response->setJsonContent(['error' => $e->getMessage()]);
-        }
     }
 
     /**

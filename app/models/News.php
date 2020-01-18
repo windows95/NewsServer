@@ -14,9 +14,10 @@ class News extends Model
     public $author_id;
     public $title;
     public $content;
+    public $created_at;
 
     /**
-     * Comments
+     * initialize
      *
      * @since 17.01.2020 22:15
      * @author byrkin
@@ -32,5 +33,16 @@ class News extends Model
                 'alias' => 'author'
             ]
         );
+    }
+
+    /**
+     * beforeValidationOnCreate
+     *
+     * @since 18.01.2020 18:40
+     * @author byrkin
+     */
+    public function beforeValidationOnCreate()
+    {
+        $this->created_at = date('Y-m-d H:i:s');
     }
 }

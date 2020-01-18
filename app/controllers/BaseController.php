@@ -1,6 +1,7 @@
 <?php
 
 use Phalcon\Mvc\Controller;
+use Api\Exceptions\WrongDataException as WrongDataException;
 
 /**
 * Контроллер с базовой логикой
@@ -21,6 +22,43 @@ class BaseController extends Controller
         $this->view->disable();
         // Default HTTP status
         $this->response->setStatusCode(200, 'OK');
+    }
+
+    /**
+     * saveOrCreateRecord
+     *
+     * @since 17.01.2020 11:14
+     * @author byrkin
+     * @param Phalcon\Mvc\Model $recode
+     * @param array $map
+     * @param stdClass $data
+     */
+    protected function saveOrCreateRecord(Phalcon\Mvc\Model $record, array $map, stdClass $data)
+    {
+        $missingFields = [];
+        foreach ($map as $paramName => $fieldName)
+        {
+            if (!property_exists($data, $paramName)) {
+                $missingFields[] = $paramName;
+            }
+            else {
+                $record->{$fieldName} = $data->{$paramName};
+            }
+        }
+
+        if (count($missingFields)) {
+            throw new WrongDataException('Missing params: ' . implode(', ', $missingFields));
+        }
+
+        if ($record->save() === false)
+        {
+            $errors = array_map(function($message) {
+                return $message->getMessage();
+            }, $newsItem->getMessages());
+
+            throw new WrongDataException(implode('; ', $errors));
+        }
+        $data->id = $record->id;
     }
 
     /**

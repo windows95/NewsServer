@@ -11,52 +11,10 @@ use Api\Exceptions\WrongDataException as WrongDataException;
 class NewsController extends BaseController
 {
     /**
-     * saveOrCreateNewsItem
-     *
-     * @since 17.01.2020 11:14
-     * @author byrkin
-     * @param object $data
-     * @param int $id
-     * @return News
+     * Соответствие названиий параметров и полей модели
+     * @var array
      */
-    protected function saveOrCreateNewsItem($data, $id = null)
-    {
-        $newsItem = $id ? News::findFirst($id) : new News();
-
-        if ($id && !$newsItem) {
-            throw new WrongDataException('News item not found');
-        }
-
-        $missingFields = [];
-        foreach (['author_id', 'title', 'content'] as $field)
-        {
-            if (!property_exists($data, $field)) {
-                $missingFields[] = $field;
-            }
-        }
-
-        if (count($missingFields)) {
-            throw new WrongDataException('Fields missing: ' . implode(', ', $missingFields));
-        }
-
-        $newsItem->author_id = $data->author_id;
-        $newsItem->title = $data->title;
-        $newsItem->content = $data->content;
-
-        if (!$id) {
-            $newsItem->created_at = date('Y-m-d H:i:s');
-        }
-
-        if ($newsItem->save() === false)
-        {
-            $errors = array_map(function($message) {
-                return $message->getMessage();
-            }, $newsItem->getMessages());
-
-            throw new WrongDataException(implode('; ', $errors));
-        }
-        return $newsItem;
-    }
+    protected $map = ['title' => 'title', 'content' => 'content', 'author_id' => 'author_id'];
 
     /**
      * Список новостей
@@ -99,16 +57,16 @@ class NewsController extends BaseController
     protected function prepareList(Phalcon\Mvc\Model\Resultset\Simple $news)
     {
         $data = [];
-        foreach ($news as $item)
+        foreach ($news as $newsItem)
         {
             $data[] = [
-                'id' => $item->id,
-                'title' => $item->title,
-                'content' => mb_substr($item->content, 0, 150),
-                'created_at' => $item->created_at,
+                'id' => $newsItem->id,
+                'title' => $newsItem->title,
+                'content' => mb_substr($newsItem->content, 0, 150),
+                'created_at' => $newsItem->created_at,
                 'author' => [
-                    'id' => $item->author->id,
-                    'name' => $item->author->first_name . ' ' . $item->author->last_name
+                    'id' => $newsItem->author->id,
+                    'name' => $newsItem->author->first_name . ' ' . $newsItem->author->last_name
                 ]
             ];
         }
@@ -120,21 +78,16 @@ class NewsController extends BaseController
      *
      * @since 17.01.2020 11:12
      * @author byrkin
-     * @param string param
-     * @return string return
      */
     public function createAction()
     {
         try
         {
-            $data = $this->request->getJsonRawBody();
-
-            $author = $this->saveOrCreateNewsItem($data);
-
-            $data->id = $author->id;
+            $newsItem = new News();
+            $this->saveOrCreateRecord($newsItem, $this->map, $this->request->getJsonRawBody());
 
             $this->response->setStatusCode(201, 'Created');
-            $this->response->setJsonContent($data);
+            $this->response->setJsonContent(['id' => $newsItem->id]);
         }
         catch (WrongDataException $e)
         {
@@ -158,11 +111,12 @@ class NewsController extends BaseController
     {
         try
         {
-            $data = $this->request->getJsonRawBody();
-
-            $this->saveOrCreateNewsItem($data, intval($id));
-
-            $this->response->setJsonContent($data);
+            $newsItem = News::findFirst(intval($id));
+            if (!$newsItem) {
+                throw new WrongDataException('News item not found');
+            }
+            $this->saveOrCreateRecord($newsItem, $this->map, $this->request->getJsonRawBody());
+            $this->response->setJsonContent(['id' => $newsItem->id]);
         }
         catch (WrongDataException $e)
         {
@@ -186,11 +140,11 @@ class NewsController extends BaseController
     {
         try
         {
-            $item = News::findFirst(intval($id));
+            $newsItem = News::findFirst(intval($id));
 
-            if ($item)
+            if ($newsItem)
             {
-                $item->delete();
+                $newsItem->delete();
                 $this->response->setJsonContent(['id' => $id]);
             }
             else
@@ -214,18 +168,18 @@ class NewsController extends BaseController
      */
     public function newsItemAction($id)
     {
-        $item = News::findFirst(intval($id));
+        $newsItem = News::findFirst(intval($id));
 
-        if ($item)
+        if ($newsItem)
         {
             $this->response->setJsonContent([
-                'id' => $item->id,
-                'title' => $item->title,
-                'content' => $item->content,
-                'created_at' => $item->created_at,
+                'id' => $newsItem->id,
+                'title' => $newsItem->title,
+                'content' => $newsItem->content,
+                'created_at' => $newsItem->created_at,
                 'author' => [
-                    'id' => $item->author->id,
-                    'name' => $item->author->first_name . ' ' . $item->author->last_name
+                    'id' => $newsItem->author->id,
+                    'name' => $newsItem->author->first_name . ' ' . $newsItem->author->last_name
                 ]
             ]);
         }
