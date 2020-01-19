@@ -59,11 +59,13 @@ class NewsController extends BaseController
         $data = [];
         foreach ($news as $newsItem)
         {
+            $createdAt = new DateTime($newsItem->created_at);
+
             $data[] = [
                 'id' => $newsItem->id,
                 'title' => $newsItem->title,
                 'content' => mb_substr($newsItem->content, 0, 150),
-                'created_at' => $newsItem->created_at,
+                'created_at' => $createdAt->format('d.m.Y H:i'),
                 'author' => [
                     'id' => $newsItem->author->id,
                     'name' => $newsItem->author->first_name . ' ' . $newsItem->author->last_name
