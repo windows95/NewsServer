@@ -15,7 +15,9 @@ class NewsController extends BaseController
      * @var array
      */
     protected $map = ['title' => 'title', 'content' => 'content', 'author_id' => 'author_id'];
+
     public $var = 'foo';
+
     /**
      * Список новостей
      *
